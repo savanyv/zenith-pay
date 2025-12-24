@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/savanyv/zenith-pay/config"
+	"github.com/savanyv/zenith-pay/internal/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -18,6 +19,17 @@ func InitDatabase(cfg *config.Config) (*gorm.DB, error) {
 		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err != nil {
 			log.Fatal("Failed to connect to database:", err)
+			return nil, err
+		}
+
+		if err := db.AutoMigrate(
+			&model.User{},
+			&model.Category{},
+			&model.Transaction{},
+			&model.TransactionItems{},
+			&model.Product{},
+		); err != nil {
+			log.Fatal("Failed to migrate database:", err)
 			return nil, err
 		}
 
