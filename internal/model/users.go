@@ -6,6 +6,21 @@ import (
 	"github.com/google/uuid"
 )
 
+type Role string
+
+const (
+	AdminRole Role = "admin"
+	CashierRole Role = "cashier"
+)
+
+func IsValidRole(role string) bool {
+	switch Role(role) {
+	case AdminRole, CashierRole:
+		return true
+	}
+	return false
+}
+
 type User struct {
 	ID uuid.UUID `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Username string   `json:"username" gorm:"unique;not null"`

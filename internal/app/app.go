@@ -6,6 +6,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/savanyv/zenith-pay/config"
 	"github.com/savanyv/zenith-pay/internal/database"
+	"github.com/savanyv/zenith-pay/internal/delivery/routes"
+	"github.com/savanyv/zenith-pay/internal/middlewares"
 )
 
 // Server represents the application server
@@ -30,7 +32,12 @@ func (s *Server) Start() error {
 		return err
 	}
 
+	// middlewares
+	s.app.Use(middlewares.CORSMiddleware())
+	s.app.Use(middlewares.MethodValidationMiddleware())
+
 	// Routes
+	routes.RegisterRoutes(s.app)
 
 	// Server Listen
 	if err := s.app.Listen(":3000"); err != nil {

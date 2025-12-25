@@ -13,6 +13,8 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBName     string
+
+	JwtSecretKey string
 }
 
 // LoadConfig loads configuration from environment variables
@@ -27,6 +29,7 @@ func LoadConfig() *Config {
 		DBUser:     loadEnv("DB_USER"),
 		DBPassword: loadEnv("DB_PASSWORD"),
 		DBName:     loadEnv("DB_NAME"),
+		JwtSecretKey: loadEnv("JWT_SECRET"),
 	}
 }
 
