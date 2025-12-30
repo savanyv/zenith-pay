@@ -6,13 +6,11 @@ import (
 	"github.com/savanyv/zenith-pay/internal/delivery/handlers"
 	"github.com/savanyv/zenith-pay/internal/repository"
 	"github.com/savanyv/zenith-pay/internal/usecase"
-	"github.com/savanyv/zenith-pay/internal/utils/helpers"
 )
 
 func userRegisterRoutes(app fiber.Router) {
-	jwt := helpers.NewJWTService()
 	repo := repository.NewUserRepository(database.DB)
-	usecase := usecase.NewUserUsecase(repo, jwt)
+	usecase := usecase.NewUserUsecase(repo)
 	handler := handlers.NewUserHandler(usecase)
 
 	app.Post("/zenith-pay/auth/register", handler.Register)

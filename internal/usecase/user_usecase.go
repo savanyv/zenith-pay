@@ -20,10 +20,10 @@ type userUsecase struct {
 	jwt helpers.JWTService
 }
 
-func NewUserUsecase(userRepo repository.UserRespository, jwt helpers.JWTService) UserUsecase {
+func NewUserUsecase(userRepo repository.UserRespository) UserUsecase {
 	return &userUsecase{
 		userRepo: userRepo,
-		jwt: jwt,
+		jwt: helpers.NewJWTService(),
 		bcrypt: helpers.NewBcryptHelper(),
 	}
 }
@@ -74,7 +74,7 @@ func (u *userUsecase) Login(req *dtos.LoginRequest) (*dtos.LoginResponse, error)
 		return nil, errors.New("invalid username or password")
 	}
 
-	token, err := u.jwt.GenerateToken(user.ID.String(), user.Username)
+	token, err := u.jwt.GenerateToken(user.ID.String(), user.Username, user.Role)
 	if err != nil {
 		return nil, errors.New("failed to generate access token")
 	}

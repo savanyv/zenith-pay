@@ -7,7 +7,7 @@ import (
 	"github.com/savanyv/zenith-pay/internal/utils/helpers"
 )
 
-func AuthMiddleware(jwtService helpers.JWTService) fiber.Handler {
+func JWTMiddleware(jwtService helpers.JWTService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
@@ -27,6 +27,7 @@ func AuthMiddleware(jwtService helpers.JWTService) fiber.Handler {
 
 		c.Locals("userID", claims.UserID)
 		c.Locals("username", claims.Username)
+		c.Locals("role", claims.Role)
 
 		return c.Next()
 	}

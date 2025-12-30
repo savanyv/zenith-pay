@@ -1,7 +1,13 @@
 package routes
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+	"github.com/savanyv/zenith-pay/internal/utils/helpers"
+)
 
 func RegisterRoutes(app fiber.Router) {
+	jwtService := helpers.NewJWTService()
+
 	userRegisterRoutes(app)
+	categoryRegisterRoutes(app, jwtService)
 }

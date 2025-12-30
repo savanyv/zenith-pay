@@ -10,11 +10,12 @@ import (
 type JWTClaim struct {
 	UserID string `json:"user_id"`
 	Username string `json:"username"`
+	Role string `json:"role"`
 	jwt.RegisteredClaims
 }
 
 type JWTService interface {
-	GenerateToken(userID, username string) (string, error)
+	GenerateToken(userID, username, role string) (string, error)
 	ValidateToken(tokenString string) (*JWTClaim, error)
 }
 
@@ -26,16 +27,17 @@ type jwtService struct {
 func NewJWTService() JWTService {
 	return &jwtService{
 		secretKey: config.LoadConfig().JwtSecretKey,
-		issuer: "couplend-backend",
+		issuer: "zenith-pay-backend",
 	}
 }
 
-func (j *jwtService) GenerateToken(userID, username string) (string, error) {
+func (j *jwtService) GenerateToken(userID, username, role string) (string, error) {
 	claims := &JWTClaim{
 		UserID: userID,
 		Username: username,
+		Role: role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer: j.issuer,
+			Issuer: "zenith-pay-backend",
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt: jwt.NewNumericDate(time.Now()),
 		},
