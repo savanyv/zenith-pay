@@ -13,12 +13,13 @@ const (
 	CashierRole Role = "cashier"
 )
 
-func IsValidRole(role string) bool {
-	switch Role(role) {
+func (r Role) IsValid() bool {
+	switch r {
 	case AdminRole, CashierRole:
 		return true
+	default:
+		return false
 	}
-	return false
 }
 
 type User struct {
@@ -27,7 +28,7 @@ type User struct {
 	Password string   `json:"password" gorm:"not null"`
 	FullName string   `json:"full_name" gorm:"not null"`
 	Email    string   `json:"email" gorm:"unique;not null"`
-	Role string   `json:"role" gorm:"not null"`
+	Role Role   `json:"role" gorm:"not null"`
 	IsActive bool    `json:"is_active" gorm:"default:true"`
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`

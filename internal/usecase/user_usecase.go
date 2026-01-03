@@ -20,11 +20,11 @@ type userUsecase struct {
 	jwt helpers.JWTService
 }
 
-func NewUserUsecase(userRepo repository.UserRespository) UserUsecase {
+func NewUserUsecase(userRepo repository.UserRespository, jwt helpers.JWTService, bcrypt helpers.BcryptHelper) UserUsecase {
 	return &userUsecase{
 		userRepo: userRepo,
-		jwt: helpers.NewJWTService(),
-		bcrypt: helpers.NewBcryptHelper(),
+		jwt: jwt,
+		bcrypt: bcrypt,
 	}
 }
 
@@ -32,6 +32,11 @@ func (u *userUsecase) Register(req *dtos.CreateUserRequest) (*dtos.CreateUserRes
 	userExists, err := u.userRepo.GetByUsername(req.Username)
 	if err == nil && userExists != nil {
 		return nil, errors.New("username already taken")
+	}
+
+	role := model.Role(req.Role)
+	if !role.IsValid() {
+		return nil, errors.New("invalid role specified")
 	}
 
 	hashPassword, err := u.bcrypt.HashPassword(req.Password)
@@ -44,7 +49,7 @@ func (u *userUsecase) Register(req *dtos.CreateUserRequest) (*dtos.CreateUserRes
 		Password: hashPassword,
 		FullName: req.FullName,
 		Email: req.Email,
-		Role: req.Role,
+		Role: role,
 		IsActive: true,
 	}
 
@@ -57,7 +62,7 @@ func (u *userUsecase) Register(req *dtos.CreateUserRequest) (*dtos.CreateUserRes
 		Username: user.Username,
 		FullName: user.FullName,
 		Email: user.Email,
-		Role: user.Role,
+		Role: string(user.Role),
 		IsActive: user.IsActive,
 	}
 
@@ -66,7 +71,11 @@ func (u *userUsecase) Register(req *dtos.CreateUserRequest) (*dtos.CreateUserRes
 
 func (u *userUsecase) Login(req *dtos.LoginRequest) (*dtos.LoginResponse, error) {
 	user, err := u.userRepo.GetByUsername(req.Username)
-	if err != nil {
+	if err != nil || user == nil {
+		return nil, errors.New("invalid username or password")
+	}
+
+	if !user.IsActive {
 		return nil, errors.New("invalid username or password")
 	}
 
@@ -74,9 +83,9 @@ func (u *userUsecase) Login(req *dtos.LoginRequest) (*dtos.LoginResponse, error)
 		return nil, errors.New("invalid username or password")
 	}
 
-	token, err := u.jwt.GenerateToken(user.ID.String(), user.Username, user.Role)
+	token, err := u.jwt.GenerateToken(user.ID.String(), user.Username, string(user.Role))
 	if err != nil {
-		return nil, errors.New("failed to generate access token")
+		return nil, errors.New("failed to generate JWT token")
 	}
 
 	res := &dtos.LoginResponse{

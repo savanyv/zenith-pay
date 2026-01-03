@@ -1,0 +1,84 @@
+package handlers
+
+import (
+	"github.com/gofiber/fiber/v2"
+	dtos "github.com/savanyv/zenith-pay/internal/dto"
+	"github.com/savanyv/zenith-pay/internal/usecase"
+	"github.com/savanyv/zenith-pay/internal/utils/helpers"
+)
+
+type ProductHandler struct {
+	productUsecase usecase.ProductUsecase
+	validator *helpers.CustomValidator
+}
+
+func NewProductHandler(productUsecase usecase.ProductUsecase) *ProductHandler {
+	return &ProductHandler{
+		productUsecase: productUsecase,
+		validator:      helpers.NewCustomValidtor(),
+	}
+}
+
+func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
+	var req dtos.ProductRequest
+	if err := c.BodyParser(&req); err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if err := h.validator.Validate(&req); err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	res, err := h.productUsecase.CreateProduct(&req)
+	if err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return helpers.SuccessResponse(c, fiber.StatusCreated, "Product created successfully", res)
+}
+
+func (h *ProductHandler) GetProductByID(c *fiber.Ctx) error {
+	id := c.Params("id")
+	res, err := h.productUsecase.GetProductByID(id)
+	if err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return helpers.SuccessResponse(c, fiber.StatusOK, "Product retrieved successfully", res)
+}
+
+func (h *ProductHandler) ListProduct(c *fiber.Ctx) error {
+	res, err := h.productUsecase.ListProducts()
+	if err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return helpers.SuccessResponse(c, fiber.StatusOK, "Products retrieved successfully", res)
+}
+
+func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
+	id := c.Params("id")
+	var req dtos.ProductUpdateRequest
+	if err := c.BodyParser(&req); err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if err := h.validator.Validate(&req); err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	if err := h.productUsecase.UpdateProduct(id, &req); err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return helpers.SuccessResponse(c, fiber.StatusOK, "Product updated successfully", nil)
+}
+
+func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if err := h.productUsecase.DeleteProduct(id); err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return helpers.SuccessResponse(c, fiber.StatusOK, "Product deleted successfully", nil)
+}

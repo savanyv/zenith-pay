@@ -7,7 +7,11 @@ import (
 
 func RegisterRoutes(app fiber.Router) {
 	jwtService := helpers.NewJWTService()
+	bcrypt := helpers.NewBcryptHelper()
 
-	userRegisterRoutes(app)
-	categoryRegisterRoutes(app, jwtService)
+	api := app.Group("/zenith-pay")
+
+	userRegisterRoutes(api, jwtService, bcrypt)
+	categoryRegisterRoutes(api, jwtService)
+	productRegisterRoutes(api, jwtService)
 }

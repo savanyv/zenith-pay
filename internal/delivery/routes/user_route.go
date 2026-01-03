@@ -4,15 +4,21 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/savanyv/zenith-pay/internal/database"
 	"github.com/savanyv/zenith-pay/internal/delivery/handlers"
+	"github.com/savanyv/zenith-pay/internal/middlewares"
+	"github.com/savanyv/zenith-pay/internal/model"
 	"github.com/savanyv/zenith-pay/internal/repository"
 	"github.com/savanyv/zenith-pay/internal/usecase"
+	"github.com/savanyv/zenith-pay/internal/utils/helpers"
 )
 
-func userRegisterRoutes(app fiber.Router) {
+func userRegisterRoutes(app fiber.Router, jwtService helpers.JWTService, bcrypt helpers.BcryptHelper) {
 	repo := repository.NewUserRepository(database.DB)
-	usecase := usecase.NewUserUsecase(repo)
+	usecase := usecase.NewUserUsecase(repo, jwtService, bcrypt)
 	handler := handlers.NewUserHandler(usecase)
 
-	app.Post("/zenith-pay/auth/register", handler.Register)
-	app.Post("/zenith-pay/auth/login", handler.Login)
+	auth := app.Group("/auth")
+	auth.Post("/login", handler.Login)
+
+	admin := app.Group("/admin/users", middlewares.JWTMiddleware(jwtService), middlewares.RoleMiddleware(model.AdminRole))
+	admin.Post("/", handler.Register)
 }

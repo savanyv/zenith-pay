@@ -8,7 +8,3 @@ type CategoryResponse struct {
 	ID  string `json:"id"`
 	Name string `json:"name"`
 }
-
-type ListCategoriesResponse struct {
-	Categories []CategoryResponse `json:"categories"`
-}

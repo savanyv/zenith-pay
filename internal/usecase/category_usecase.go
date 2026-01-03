@@ -10,7 +10,7 @@ import (
 
 type CategoryUsecase interface {
 	CreateCategory(req *dtos.CategoryRequest) (*dtos.CategoryResponse, error)
-	ListCategories() (*dtos.ListCategoriesResponse, error)
+	ListCategories() ([]*dtos.CategoryResponse, error)
 	GetCategoryByID(id string) (*dtos.CategoryResponse, error)
 	UpdateCategory(id string, req *dtos.CategoryRequest) (*dtos.CategoryResponse, error)
 	DeleteCategory(id string) error
@@ -48,22 +48,18 @@ func (u *categoryUsecase) CreateCategory(req *dtos.CategoryRequest) (*dtos.Categ
 	return res, nil
 }
 
-func (u *categoryUsecase) ListCategories() (*dtos.ListCategoriesResponse, error) {
+func (u *categoryUsecase) ListCategories() ([]*dtos.CategoryResponse, error) {
 	categories, err := u.categoryRepo.FindAll()
 	if err != nil {
-		return nil, errors.New("failed to retrieve categories")
+		return nil, errors.New("failed to fetch categories")
 	}
 
-	var categoryResponses []dtos.CategoryResponse
+	var res []*dtos.CategoryResponse
 	for _, category := range categories {
-		categoryResponses = append(categoryResponses, dtos.CategoryResponse{
-			ID:   category.ID.String(),
+		res = append(res, &dtos.CategoryResponse{
+			ID:  category.ID.String(),
 			Name: category.Name,
 		})
-	}
-
-	res := &dtos.ListCategoriesResponse{
-		Categories: categoryResponses,
 	}
 
 	return res, nil

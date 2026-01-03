@@ -11,23 +11,24 @@ func JWTMiddleware(jwtService helpers.JWTService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
-			return helpers.ErrorResponse(c, fiber.StatusUnauthorized, "Authorization header is missing")
+			return helpers.ErrorResponse(c, fiber.StatusUnauthorized, "Missing or malformed JWT")
 		}
 
-		bearerToken := strings.Split(authHeader, " ")
-		if len(bearerToken) != 2 || bearerToken[0] != "Bearer" {
-			return helpers.ErrorResponse(c, fiber.StatusUnauthorized, "Invalid authorization header format")
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			return helpers.ErrorResponse(c, fiber.StatusUnauthorized, "Missing or malformed JWT")
 		}
+		tokenString := parts[1]
 
-		token := bearerToken[1]
-		claims, err := jwtService.ValidateToken(token)
+		claims, err := jwtService.ValidateToken(tokenString)
 		if err != nil {
-			return helpers.ErrorResponse(c, fiber.StatusUnauthorized, "Invalid or expired token")
+			return helpers.ErrorResponse(c, fiber.StatusUnauthorized, "Invalid or expired JWT")
 		}
 
 		c.Locals("userID", claims.UserID)
 		c.Locals("username", claims.Username)
 		c.Locals("role", claims.Role)
+		c.Locals("claims", claims)
 
 		return c.Next()
 	}
