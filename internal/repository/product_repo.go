@@ -3,6 +3,7 @@ package repository
 import (
 	"github.com/savanyv/zenith-pay/internal/model"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ProductRepository interface {
@@ -13,6 +14,8 @@ type ProductRepository interface {
 	FindAll() ([]*model.Product, error)
 	Update(product *model.Product) error
 	Delete(id string) error
+	FindByIDForUpdate(tx *gorm.DB, id string) (*model.Product, error)
+	UpdateTx(tx *gorm.DB, product *model.Product) error
 }
 
 type productRepository struct {
@@ -83,4 +86,19 @@ func (r *productRepository) Delete(id string) error {
 	}
 
 	return nil
+}
+
+func (r *productRepository) FindByIDForUpdate(tx *gorm.DB, id string) (*model.Product, error) {
+	var product model.Product
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", id).First(&product).Error; err != nil {
+		return nil, err
+	}
+
+	return &product, nil
+}
+
+func (r *productRepository) UpdateTx(tx *gorm.DB, product *model.Product) error {
+	return tx.Model(&model.Product{}).Where("id = ?", product.ID).Updates(map[string]interface{}{
+		"stock": product.Stock,
+	}).Error
 }

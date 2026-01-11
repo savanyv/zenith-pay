@@ -6,8 +6,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/savanyv/zenith-pay/config"
 	"github.com/savanyv/zenith-pay/internal/database"
+	"github.com/savanyv/zenith-pay/internal/database/seed"
 	"github.com/savanyv/zenith-pay/internal/delivery/routes"
 	"github.com/savanyv/zenith-pay/internal/middlewares"
+	"github.com/savanyv/zenith-pay/internal/utils/helpers"
 )
 
 // Server represents the application server
@@ -31,6 +33,10 @@ func (s *Server) Start() error {
 	if err != nil {
 		return err
 	}
+
+	// Seed
+	bcHelper := helpers.NewBcryptHelper()
+	seed.SeedAdmin(database.DB, bcHelper)
 
 	// middlewares
 	s.app.Use(middlewares.CORSMiddleware())

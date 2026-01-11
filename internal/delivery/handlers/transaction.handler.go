@@ -1,0 +1,62 @@
+package handlers
+
+import (
+	"github.com/gofiber/fiber/v2"
+	dtos "github.com/savanyv/zenith-pay/internal/dto"
+	"github.com/savanyv/zenith-pay/internal/usecase"
+	"github.com/savanyv/zenith-pay/internal/utils/helpers"
+)
+
+type TransactionHandler struct {
+	transactionUsecase usecase.TransactionUsecase
+	validator *helpers.CustomValidator
+}
+
+func NewTransactionHandler(tu usecase.TransactionUsecase) *TransactionHandler {
+	return &TransactionHandler{
+		transactionUsecase: tu,
+		validator: helpers.NewCustomValidtor(),
+	}
+}
+
+func (h *TransactionHandler) CreateTransaction(c *fiber.Ctx) error {
+	var req dtos.TransactionRequest
+	if err := c.BodyParser(&req); err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	userID, ok := c.Locals("userID").(string)
+	if !ok || userID == "" {
+		return helpers.ErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
+
+	if err := h.validator.Validate(&req); err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	res, err := h.transactionUsecase.CreateTransaction(userID, &req)
+	if err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return helpers.SuccessResponse(c, fiber.StatusCreated, "Transaction created successfully", res)
+}
+
+func (h *TransactionHandler) ListTransactions(c *fiber.Ctx) error {
+	res, err := h.transactionUsecase.GetAllTransaction()
+	if err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return helpers.SuccessResponse(c, fiber.StatusOK, "Transactions retrieved successfully", res)
+}
+
+func (h *TransactionHandler) GetTransactionByID(c *fiber.Ctx) error {
+	id := c.Params("id")
+	res, err := h.transactionUsecase.GetTransactionByID(id)
+	if err != nil {
+		return helpers.ErrorResponse(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return helpers.SuccessResponse(c, fiber.StatusOK, "Transaction retrieved successfully", res)
+}

@@ -14,4 +14,5 @@ func RegisterRoutes(app fiber.Router) {
 	userRegisterRoutes(api, jwtService, bcrypt)
 	categoryRegisterRoutes(api, jwtService)
 	productRegisterRoutes(api, jwtService)
+	transactionRegisterRoutes(api, jwtService)
 }
