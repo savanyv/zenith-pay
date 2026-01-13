@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -40,28 +41,33 @@ func (u *transactionUsecase) CreateTransaction(userID string, req *dtos.Transact
 
 	userUUID, err := uuid.Parse(userID)
 	if err != nil {
-		return nil, errors.New("invalid user id")
+		return nil, errors.New("invalid user ID")
+	}
+
+	paymentMethod := model.PaymentMethod(req.PaymentMethod)
+	if !paymentMethod.IsValid() {
+		return nil, errors.New("invalid payment method")
 	}
 
 	var (
-		totalAmount float64
-		transaction model.Transaction
+		totalAmount     int64
+		transaction     model.Transaction
 		transactionItems []model.TransactionItems
-		responseItems []dtos.TransactionItemResponse
+		responseItems   []dtos.TransactionItemResponse
 	)
 
 	err = u.db.Transaction(func(tx *gorm.DB) error {
 		for _, item := range req.Items {
 			product, err := u.productRepo.FindByIDForUpdate(tx, item.ProductID)
 			if err != nil {
-				return errors.New("product not found")
+				return fmt.Errorf("product not found: %s", item.ProductID)
 			}
 
 			if product.Stock < item.Quantity {
-				return errors.New("insufficient stock")
+				return fmt.Errorf("insufficient stock for product %s", product.Name)
 			}
 
-			subTotal := product.Price * float64(item.Quantity)
+			subTotal := product.Price * int64(item.Quantity)
 			totalAmount += subTotal
 
 			product.Stock -= item.Quantity
@@ -70,38 +76,42 @@ func (u *transactionUsecase) CreateTransaction(userID string, req *dtos.Transact
 			}
 
 			transactionItems = append(transactionItems, model.TransactionItems{
-				ProductID: product.ID,
-				ProductName: product.Name,
+				ProductID:    product.ID,
+				ProductName:  product.Name,
 				ProductPrice: product.Price,
-				Quantity: item.Quantity,
-				Subtotal: subTotal,
+				Quantity:     item.Quantity,
+				Subtotal:     subTotal,
 			})
 
 			responseItems = append(responseItems, dtos.TransactionItemResponse{
-				ProductID: product.ID.String(),
-				ProductName: product.Name,
+				ProductID:    product.ID.String(),
+				ProductName:  product.Name,
 				ProductPrice: product.Price,
-				Quantity: item.Quantity,
-				SubTotal: subTotal,
+				Quantity:     item.Quantity,
+				SubTotal:     subTotal,
 			})
 		}
 
-		if req.PaymentAmount < totalAmount {
-			return errors.New("insufficient payment amount")
-		}
+		paymentAmount := req.PaymentAmount
+		var changeAmount int64
 
-		paymentMethod := model.PaymentMethod(req.PaymentMethod)
-		if !paymentMethod.IsValid() {
-			return errors.New("invalid payment method")
+		if paymentMethod == model.Cash {
+			if paymentAmount < totalAmount {
+				return errors.New("payment amount is less than total amount")
+			}
+			changeAmount = paymentAmount - totalAmount
+		} else {
+			paymentAmount = totalAmount
+			changeAmount = 0
 		}
 
 		transaction = model.Transaction{
-			UserID: userUUID,
+			UserID:          userUUID,
 			TransactionDate: time.Now(),
-			PaymentMethod: paymentMethod,
-			TotalAmount: totalAmount,
-			PaymentAmount: req.PaymentAmount,
-			ChangeAmount: req.PaymentAmount - totalAmount,
+			PaymentMethod:   paymentMethod,
+			TotalAmount:     totalAmount,
+			PaymentAmount:   paymentAmount,
+			ChangeAmount:    changeAmount,
 		}
 
 		if err := u.transactionRepo.Create(tx, &transaction); err != nil {
@@ -118,22 +128,21 @@ func (u *transactionUsecase) CreateTransaction(userID string, req *dtos.Transact
 
 		return nil
 	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	res := &dtos.TransactionResponse{
-		ID: transaction.ID.String(),
-		UserID: transaction.UserID.String(),
+	return &dtos.TransactionResponse{
+		ID:              transaction.ID.String(),
+		UserID:          transaction.UserID.String(),
 		TransactionDate: transaction.TransactionDate,
-		PaymentMethod: string(transaction.PaymentMethod),
-		TotalAmount: transaction.TotalAmount,
-		PaymentAmount: transaction.PaymentAmount,
-		ChangeAmount: transaction.ChangeAmount,
-		Items: responseItems,
-	}
-
-	return res, nil
+		PaymentMethod:   string(transaction.PaymentMethod),
+		TotalAmount:     transaction.TotalAmount,
+		PaymentAmount:   transaction.PaymentAmount,
+		ChangeAmount:    transaction.ChangeAmount,
+		Items:           responseItems,
+	}, nil
 }
 
 func (u *transactionUsecase) GetTransactionByID(id string) (*dtos.TransactionResponse, error) {
