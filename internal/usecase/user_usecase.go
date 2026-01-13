@@ -83,7 +83,7 @@ func (u *userUsecase) Login(req *dtos.LoginRequest) (*dtos.LoginResponse, error)
 		return nil, errors.New("invalid username or password")
 	}
 
-	token, err := u.jwt.GenerateToken(user.ID.String(), user.Username, string(user.Role))
+	token, err := u.jwt.GenerateAccessToken(user.ID.String(), user.Username, string(user.Role), 1)
 	if err != nil {
 		return nil, errors.New("failed to generate JWT token")
 	}

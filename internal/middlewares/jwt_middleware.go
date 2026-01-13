@@ -21,7 +21,7 @@ func JWTMiddleware(jwtService helpers.JWTService) fiber.Handler {
 		}
 		tokenString := parts[1]
 
-		claims, err := jwtService.ValidateToken(tokenString)
+		claims, err := jwtService.ValidateAccessToken(tokenString)
 		if err != nil {
 			return helpers.ErrorResponse(c, fiber.StatusUnauthorized, "Invalid or expired JWT")
 		}
