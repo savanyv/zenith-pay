@@ -16,18 +16,18 @@ func SeedAdmin(db *gorm.DB, bc helpers.BcryptHelper) {
 	}
 
 	admin := model.User{
-		Username: "superadmin",
+		Username: "savanyv",
 		Password: hashedPassword,
-		FullName: "Super Admin",
-		Email: "admin@zenithpay.com",
+		FullName: "Mochamad Saddam",
+		Email: "savanyvv@zenithpay.com",
 		Role: "admin",
 		IsActive: true,
 	}
 
-	err = db.Where(model.User{Username: "superadmin"}).FirstOrCreate(&admin).Error
+	err = db.Where(model.User{Username: "savanyv"}).FirstOrCreate(&admin).Error
 	if err != nil {
 		log.Printf("Failed to seed admin: %v", err)
 	} else {
-		fmt.Println("✅ seeding admin successfully: Username: 'superadmin', password: 'savxpms141221'")
+		fmt.Println("✅ seeding admin successfully: Username: 'savanyv', password: 'savxpms141221'")
 	}
 }
