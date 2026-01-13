@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/savanyv/zenith-pay/internal/database"
 	"github.com/savanyv/zenith-pay/internal/delivery/handlers"
@@ -17,8 +19,8 @@ func userRegisterRoutes(app fiber.Router, jwtService helpers.JWTService, bcrypt 
 	handler := handlers.NewUserHandler(usecase)
 
 	auth := app.Group("/auth")
-	auth.Post("/login", handler.Login)
+	auth.Post("/login", middlewares.RateLimiter(5, 1*time.Minute),handler.Login)
 
-	admin := app.Group("/admin/users", middlewares.JWTMiddleware(jwtService), middlewares.RoleMiddleware(model.AdminRole))
+	admin := app.Group("/admin/users", middlewares.JWTMiddleware(jwtService), middlewares.RoleMiddleware(model.AdminRole), middlewares.RateLimiter(20, 1*time.Minute))
 	admin.Post("/", handler.Register)
 }

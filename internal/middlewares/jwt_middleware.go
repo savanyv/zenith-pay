@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/savanyv/zenith-pay/internal/utils/helpers"
@@ -23,6 +24,10 @@ func JWTMiddleware(jwtService helpers.JWTService) fiber.Handler {
 		claims, err := jwtService.ValidateToken(tokenString)
 		if err != nil {
 			return helpers.ErrorResponse(c, fiber.StatusUnauthorized, "Invalid or expired JWT")
+		}
+
+		if claims.ExpiresAt == nil || claims.ExpiresAt.Before(time.Now()) {
+			return helpers.ErrorResponse(c, fiber.StatusUnauthorized, "Token expired")
 		}
 
 		c.Locals("userID", claims.UserID)

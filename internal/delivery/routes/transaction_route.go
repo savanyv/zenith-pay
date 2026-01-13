@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/savanyv/zenith-pay/internal/database"
 	"github.com/savanyv/zenith-pay/internal/delivery/handlers"
@@ -17,7 +19,7 @@ func transactionRegisterRoutes(app fiber.Router, jwtService helpers.JWTService) 
 	uc := usecase.NewTransactionUsecase(database.DB, repo, itemRepo, productRepo)
 	handler := handlers.NewTransactionHandler(uc)
 
-	transactionRoutes := app.Group("/transactions", middlewares.JWTMiddleware(jwtService))
+	transactionRoutes := app.Group("/transactions", middlewares.JWTMiddleware(jwtService), middlewares.RateLimiter(30, 1*time.Minute))
 	transactionRoutes.Post("/", handler.CreateTransaction)
 	transactionRoutes.Get("/", handler.ListTransactions)
 	transactionRoutes.Get("/:id", handler.GetTransactionByID)
