@@ -8,6 +8,10 @@ import (
 
 // Config holds the application configuration
 type Config struct {
+	AppName string
+	AppEnv string
+	AppPort string
+
 	DBHost     string
 	DBPort     string
 	DBUser     string
@@ -19,16 +23,19 @@ type Config struct {
 
 // LoadConfig loads configuration from environment variables
 func LoadConfig() *Config {
-	if err := godotenv.Load(); err != nil {
-		panic("Error loading .env file")
-	}
+	_ = godotenv.Load()
 
 	return &Config{
+		AppName:    loadEnv("APP_NAME"),
+		AppEnv:     loadEnv("APP_ENV"),
+		AppPort:    loadEnv("APP_PORT"),
+
 		DBHost:     loadEnv("DB_HOST"),
 		DBPort:     loadEnv("DB_PORT"),
 		DBUser:     loadEnv("DB_USER"),
 		DBPassword: loadEnv("DB_PASSWORD"),
 		DBName:     loadEnv("DB_NAME"),
+		
 		JwtSecretKey: loadEnv("JWT_SECRET"),
 	}
 }

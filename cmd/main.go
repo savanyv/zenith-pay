@@ -1,17 +1,25 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"github.com/savanyv/zenith-pay/config"
 	"github.com/savanyv/zenith-pay/internal/app"
 )
 
 func main() {
-	// Load configuration
-	config := config.LoadConfig()
+	// Load Config
+	cfg := config.LoadConfig()
 
-	// Initialize and start the server
-	server := app.NewServer(config)
+	log.Printf("🚀 Starting %s (%s environment)",
+		cfg.AppName,
+		cfg.AppEnv,
+	)
+
+	server := app.NewServer(cfg)
 	if err := server.Start(); err != nil {
-		panic(err)
+		log.Printf("Server stopped with error: %v", err)
+		os.Exit(1)
 	}
 }

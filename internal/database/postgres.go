@@ -13,28 +13,34 @@ import (
 var DB *gorm.DB
 
 func InitDatabase(cfg *config.Config) (*gorm.DB, error) {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort)
+	dsn := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		cfg.DBHost,
+		cfg.DBPort,
+		cfg.DBUser,
+		cfg.DBPassword,
+		cfg.DBName,
+	)
 
-		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-		if err != nil {
-			log.Fatal("Failed to connect to database:", err)
-			return nil, err
-		}
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
 
+	if cfg.AppEnv == "development" {
 		if err := db.AutoMigrate(
 			&model.User{},
 			&model.Category{},
+			&model.Product{},
 			&model.Transaction{},
 			&model.TransactionItems{},
-			&model.Product{},
+			&model.Shift{},
 		); err != nil {
-			log.Fatal("Failed to migrate database:", err)
-			return nil, err
+			log.Fatal(err)
 		}
+	}
 
-		DB = db
-
-		log.Println("Database connection successfully")
-		return db, nil
+	DB = db
+	log.Println("Database connected")
+	return db, nil
 }

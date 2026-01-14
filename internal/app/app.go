@@ -1,7 +1,13 @@
 package app
 
 import (
+	"context"
+	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/savanyv/zenith-pay/config"
@@ -20,37 +26,59 @@ type Server struct {
 
 // NewServer creates a new Server instance with the given configuration
 func NewServer(config *config.Config) *Server {
+	app := fiber.New(fiber.Config{
+		AppName: config.AppName,
+		ReadTimeout: 10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout: 10 * time.Second,
+	})
+
 	return &Server{
-		app: fiber.New(),
+		app: app,
 		config: config,
 	}
 }
 
 // Start initializes the database, sets up routes, and starts the server
 func (s *Server) Start() error {
-	// Database
-	_, err := database.InitDatabase(s.config)
-	if err != nil {
-		return err
+	// database
+	if _, err := database.InitDatabase(s.config); err != nil {
+		return fmt.Errorf("init database: %w", err)
 	}
 
 	// Seed
-	bcHelper := helpers.NewBcryptHelper()
-	seed.SeedAdmin(database.DB, bcHelper)
-
-	// middlewares
-	s.app.Use(middlewares.CORSMiddleware())
-	s.app.Use(middlewares.MethodValidationMiddleware())
-
-	// Routes
-	routes.RegisterRoutes(s.app)
-
-	// Server Listen
-	if err := s.app.Listen(":3000"); err != nil {
-		log.Fatal("Failed to start server:", err)
-		return err
+	if s.config.AppEnv == "development" {
+		bcHelper := helpers.NewBcryptHelper()
+		seed.SeedAdmin(database.DB, bcHelper)
 	}
 
-	log.Println("Server is running on port 3000")
+	// Middlewares And Routes
+	s.app.Use(middlewares.CORSMiddleware())
+	s.app.Use(middlewares.MethodValidationMiddleware())
+	routes.RegisterRoutes(s.app)
+
+	// Start server
+	addr := fmt.Sprintf(":%s", s.config.AppPort)
+	go func() {
+		log.Printf("🚀 Server running on %s", addr)
+		if err := s.app.Listen(addr); err != nil {
+			log.Printf("server error: %v", err)
+		}
+	}()
+
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
+
+	log.Println("⏳ Shutting down server...")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := s.app.ShutdownWithContext(ctx); err != nil {
+		return fmt.Errorf("shutdown server: %w", err)
+	}
+
+	log.Println("✅ Server shut down successfully")
 	return nil
 }
