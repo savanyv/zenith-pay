@@ -56,7 +56,7 @@ func (u *transactionUsecase) CreateTransaction(userID string, req *dtos.Transact
 		responseItems   []dtos.TransactionItemResponse
 	)
 
-	err = u.db.Transaction(func(tx *gorm.DB) error {
+	if err := u.db.Transaction(func(tx *gorm.DB) error {
 		for _, item := range req.Items {
 			product, err := u.productRepo.FindByIDForUpdate(tx, item.ProductID)
 			if err != nil {
@@ -127,13 +127,11 @@ func (u *transactionUsecase) CreateTransaction(userID string, req *dtos.Transact
 		}
 
 		return nil
-	})
-
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
-	return &dtos.TransactionResponse{
+	res := &dtos.TransactionResponse{
 		ID:              transaction.ID.String(),
 		UserID:          transaction.UserID.String(),
 		TransactionDate: transaction.TransactionDate,
@@ -142,7 +140,9 @@ func (u *transactionUsecase) CreateTransaction(userID string, req *dtos.Transact
 		PaymentAmount:   transaction.PaymentAmount,
 		ChangeAmount:    transaction.ChangeAmount,
 		Items:           responseItems,
-	}, nil
+	}
+
+	return res, nil
 }
 
 func (u *transactionUsecase) GetTransactionByID(id string) (*dtos.TransactionResponse, error) {
