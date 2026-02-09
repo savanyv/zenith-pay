@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/savanyv/zenith-pay/internal/utils/helpers"
 )
 
 func MethodValidationMiddleware() fiber.Handler {
@@ -18,9 +19,7 @@ func MethodValidationMiddleware() fiber.Handler {
 		}
 
 		if !allowedMethods[c.Method()] {
-			return c.Status(fiber.StatusMethodNotAllowed).JSON(fiber.Map{
-				"error": "Method Not Allowed",
-			})
+			return helpers.ErrorResponse(c, fiber.StatusMethodNotAllowed, "Method not allowed")
 		}
 
 		return c.Next()

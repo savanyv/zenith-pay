@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/savanyv/zenith-pay/internal/utils/helpers"
 )
 
 func RateLimiter(max int, duration time.Duration) fiber.Handler {
@@ -18,11 +19,7 @@ func RateLimiter(max int, duration time.Duration) fiber.Handler {
 			return c.IP()
 		},
 		LimitReached: func(c *fiber.Ctx) error {
-			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"code": 429,
-				"status": "Too Many Request",
-				"message": "Request limit exceed. Please try again later.",
-			})
+			return helpers.ErrorResponse(c, fiber.StatusTooManyRequests, "Too many requests, please try again later")
 		},
 	})
 }
